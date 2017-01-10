@@ -1,0 +1,19 @@
+connect
+batch
+/subsystem=transactions:write-attribute(name=node-identifier,value=localhost)
+module add --name=org.postgres --resources=/tmp/postgresql-9.4.1212.jar --dependencies=javax.api,javax.transaction.api
+/subsystem=datasources/jdbc-driver=postgres:add(driver-name="postgres",driver-module-name="org.postgres",driver-class-name=org.postgresql.Driver)
+data-source remove --name=ExampleDS
+data-source add --jndi-name=java:/DefaultDS --name=DefaultDS --connection-url=jdbc:postgresql://172.17.0.2:5432/wildflydb --driver-name=postgres --driver-class=org.postgresql.Driver --user-name=wildflyas --password=wildflyas
+/subsystem=undertow/server=default-server/host=default-host/setting=access-log:add()
+/subsystem=logging/periodic-rotating-file-handler=AUDIT:add(level=INFO, file={"relative-to"=>"jboss.server.log.dir", "path"=>"audit.log"}, suffix=".yyyy-MM-dd", append=false, autoflush=true)
+/subsystem=logging/periodic-rotating-file-handler=AUDIT:write-attribute(name=formatter,value="%d{HH:mm:ss,SSSZ} [%c{1}] - %m%n")
+/subsystem=logging/logger=AUDIT:add(use-parent-handlers=false,handlers=["AUDIT"])
+run-batch
+reload
+
+batch
+ /subsystem=datasources/jdbc-driver=h2:remove()
+run-batch
+reload
+
